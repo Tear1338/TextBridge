@@ -17,4 +17,4 @@ for LocalLLM: Ollama must be running in the background:
 - run `ollama serve` before using TextBridge
 - default: localhost:11434
 
-- recommended Model for Ollama `gemma3:12b`,`mistral:latest`
+- recommended Model for Ollama `gemma3:12b`
