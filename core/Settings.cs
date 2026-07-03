@@ -10,6 +10,7 @@ public class Settings
         {"OpenAI", ""},
         {"Claude", ""},
         {"Gemini", ""},
+        {"FantasyAI", ""},
         {"LocalLLM", ""}
     };
 
@@ -49,6 +50,7 @@ public class Settings
         {"OpenAI", new List<string> { "gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1-nano"}},
         {"Claude", new List<string> { "claude-3-haiku-20240307", "claude-3-5-haiku-20241022", "claude-sonnet-4-20250514", "claude-sonnet-4-5-20250929" }},
         {"Gemini", new List<string> { "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite" }},
+        {"FantasyAI", new List<string> { "gpt-4o", "claude-3-5-sonnet-20241022", "deepseek-v4" }},
         {"LocalLLM", new List<string> { "custom-model" }}
     };
 
@@ -75,6 +77,13 @@ public class Settings
             {
                 var json = File.ReadAllText(configpath);
                 var settings = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+
+                foreach (var provider in providermodels.Keys)
+                {
+                    if (!settings.apikeys.ContainsKey(provider))
+                        settings.apikeys[provider] = "";
+                }
+
                 return settings;
             }
         }

@@ -67,6 +67,7 @@ public class Extension : GEarthExtension
             "OpenAI" => new Openai(cfg),
             "Claude" => new Claude(cfg),
             "Gemini" => new Gemini(cfg),
+            "FantasyAI" => new Fantasyai(cfg),
             "LocalLLM" => new Localllm(cfg),
             _ => new Xai(cfg)
         };

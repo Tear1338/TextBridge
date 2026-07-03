@@ -105,7 +105,7 @@ public partial class MainWindow : Window
 
         if (refreshmodels != null)
         {
-            refreshmodels.IsVisible = cfg.provider == "LocalLLM";
+            refreshmodels.IsVisible = cfg.provider == "LocalLLM" || cfg.provider == "FantasyAI";
         }
 
         if (keybox != null && eyebutton != null && apikeylabel != null)
@@ -300,7 +300,7 @@ public partial class MainWindow : Window
                     }
                     if (refreshmodels != null)
                     {
-                        refreshmodels.IsVisible = selectedprovider == "LocalLLM";
+                        refreshmodels.IsVisible = selectedprovider == "LocalLLM" || selectedprovider == "FantasyAI";
                     }
                     if (keybox != null && eyebutton != null && apikeylabel != null)
                     {
@@ -319,7 +319,10 @@ public partial class MainWindow : Window
         {
             refreshmodels.Click += async (s, e) =>
             {
-                await fetchlocalmodels();
+                if (cfg.provider == "FantasyAI")
+                    await fetchfantasymodels();
+                else
+                    await fetchlocalmodels();
             };
         }
 
@@ -500,6 +503,71 @@ public partial class MainWindow : Window
         }
     }
 
+
+    private async Task fetchfantasymodels()
+    {
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {cfg.getkey()}");
+            var response = await client.GetAsync("https://fantasyai.cloud/api/v1/models");
+            var json = await response.Content.ReadAsStringAsync();
+            var result = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+
+            if (result.TryGetProperty("data", out var models))
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var modeldrop = this.FindControl<ComboBox>("modeldrop");
+                    if (modeldrop != null)
+                    {
+                        var savedmodel = cfg.model;
+                        modeldrop.Items.Clear();
+                        foreach (var model in models.EnumerateArray())
+                        {
+                            if (model.TryGetProperty("id", out var id))
+                            {
+                                modeldrop.Items.Add(id.GetString());
+                            }
+                        }
+                        if (modeldrop.Items.Count > 0)
+                        {
+                            var matchingmodel = modeldrop.Items.Cast<object>().FirstOrDefault(m => m?.ToString() == savedmodel);
+                            if (matchingmodel != null)
+                            {
+                                modeldrop.SelectedItem = matchingmodel;
+                            }
+                            else
+                            {
+                                modeldrop.SelectedIndex = 0;
+                                cfg.model = modeldrop.Items[0]?.ToString() ?? "gpt-4o";
+                                autosave();
+                            }
+                            addlog($"loaded {modeldrop.Items.Count} models from fantasyai");
+                        }
+                        else
+                        {
+                            addlog("no models found on fantasyai");
+                        }
+                    }
+                });
+            }
+            else
+            {
+                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    addlog("failed to fetch fantasyai models: check your api key");
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                addlog($"failed to fetch models: {ex.Message}");
+            });
+        }
+    }
 
     public void addlog(string msg)
     {
